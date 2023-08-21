@@ -4,9 +4,9 @@ Function:	Simple LM35-based thermostat with settable setpoint and hysteresis
 			This sketch uses the analog value acquired on A0 to configure the setpoint
 
 Created:		2018-06-13
-Last Modified:	2020-11-03
+Last Modified:	2022-12-05
 
-Copyright (c) 2018, Francesco Adamo - Polytechnic University of Bari - Italy
+Copyright (c) 2018-2022, Francesco Adamo - Polytechnic University of Bari - Italy
 e-mail: francesco.adamo@poliba.it
 
 Permission is hereby granted, free of charge, to any person
@@ -34,7 +34,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 // defines
 #define ADC_FSR		5.0 // ADC Full Scale Range [V]
 #define Q			(ADC_FSR/1024.0)	// ADC resolution [V/LSB]
-#define K_LM35		Q/0.01	// transducer constant [degC/LSB]
+#define K_LM35		Q/0.01	// transducer constant [°C/LSB]
 
 #define HEATER_OUTPUT		12	// Digital output pin to control the heater
 #define FAN_OUTPUT			11	// Digital output pin to control the fan
@@ -42,72 +42,74 @@ OTHER DEALINGS IN THE SOFTWARE.
 #define SETPOINT_ANALOG_IN	A1	// Analog pin to read the setpoint
 #define DUMMY_ANALOG_IN		A2
 
-#define	MIN_TEMP		(double) 20.0	// Minimum settable temperature [degC]
-#define MAX_TEMP		(double) 40.0	// Maximum settable temperature [degC]
-#define HYST			(double) 2	// Regulation hysteresis [degC]
+#define	TMIN		(double) 15.0	// Minimum settable temperature [°C]
+#define TMAX		(double) 40.0	// Maximum settable temperature [°C]
+#define HYST		(double) 2	// Regulation hysteresis [°C]
+#define m (double) (TMAX - TMIN)/1024 // scaling factor (from sp input voltage to temperature) [°C/LSB]
+
+// Definition of ON/OFF symbols to simplify relay module drive
+// There are relays modules that are "active low" (i.e. they are ON on the LOW state of the driving digital input 
+// and other that are "active high", i.e. they are ON on the HIGH status of the driving digital input
+#define ON      LOW
+#define OFF     HIGH
 
 // Macro definition
-// NOTE: SWITCH_XXX_ON/OFF puts LOW/HIGH on the digital output to take into account the inverted
-//		 characteristic of the commonly available relay modules
-#define SWITCH_HEATER_OFF()	(digitalWrite(HEATER_OUTPUT, HIGH))
-#define SWITCH_HEATER_ON()	(digitalWrite(HEATER_OUTPUT, LOW))
+#define HEATER(status) (digitalWrite(HEATER_OUTPUT, status))
+#define FAN(status)	(digitalWrite(FAN_OUTPUT, status))
 
-#define SWITCH_FAN_OFF()	(digitalWrite(FAN_OUTPUT, HIGH))
-#define SWITCH_FAN_ON()		(digitalWrite(FAN_OUTPUT, LOW))
-
-double sp, t, dummy, LT, HT; // setpoint, actual temperature, low threshold, high threshold
+double sp, t, dummy, lt, ht; // setpoint, actual temperature, low threshold, high threshold
 
 
 void setup()
 {
 	//analogReference(INTERNAL); // Switch the ADC reference input to the 1.1 V internal reference. Uncomment if VREF = 1.1
-	//sp = MIN_TEMP + analogRead(SETPOINT_ANALOG_IN)*(MAX_TEMP - MIN_TEMP) / 1024; // read analog input 0 and scales value to [MIN_TEMP, MAX_TEMP] interval
 	pinMode(HEATER_OUTPUT, OUTPUT);
 	pinMode(FAN_OUTPUT, OUTPUT);
-	SWITCH_HEATER_OFF();
-	SWITCH_FAN_OFF(); 
-	
+	HEATER(OFF);
+	FAN(OFF); 
 	Serial.begin(115200);
-	Serial.println("Arduino + LM35 Thermostat w/ hysteresis and settable threshold");
+	Serial.println("LM35 Thermostat w/ histeresys");
+	Serial.println("setpoint temperature heater fan");
 }
 
 void loop()
 {
-	delay(100);
-	//dummy = analogRead(DUMMY_ANALOG_IN); // Alternative way to permit the settling of signals between MUX switching
-	sp = MIN_TEMP + analogRead(SETPOINT_ANALOG_IN)*(MAX_TEMP - MIN_TEMP) / 1024; // Scale the analog input value to [MIN_TEMP, MAX_TEMP] interval
-	//dummy = analogRead(DUMMY_ANALOG_IN);
-	t = K_LM35 * analogRead(LM35_ANALOG_IN); // dummy reading of LM35 input to permit the input settling
-	t = K_LM35*analogRead(LM35_ANALOG_IN);
+	sp = TMIN + m*analogRead(SETPOINT_ANALOG_IN); // actual setpoint in degrees Celsius
+	t = K_LM35 * analogRead(LM35_ANALOG_IN); // actual temperature in degrees Celsius
+	t = K_LM35 * analogRead(LM35_ANALOG_IN); // actual temperature in degrees Celsius
 
-	LT = sp - HYST / 2;
-	HT = sp + HYST / 2;
+	lt = sp - HYST / 2;
+	ht = sp + HYST / 2;
 
 	// Thermostat w/ Hysteresis implementation
-	if (t < LT) {
+	if (t < lt) {
 
-		// Temperature less than the lower threshold => switch off the fan!
-		SWITCH_HEATER_ON();
-		SWITCH_FAN_OFF();
+		// Temperature less than the lower threshold => switch heater on an fan off!
+		HEATER(ON);
+		FAN(OFF);
 	}
-	else if (t > HT) {
+	else if (t > ht) {
 
-		// Temperature greater than the higher threshold => switch on the fan!
-		SWITCH_HEATER_OFF();
-		SWITCH_FAN_ON();
+		// Temperature greater than the higher threshold => switch heater off and fan on!
+		HEATER(OFF);
+		FAN(ON);
 	}
 	else {
 		// Temperature is in the hysteresis window => don't do anything!
 	}
 
-	// Sends a string formatted as <LT>, <HT>, <t>, <relay_status>CRLF over the serial port
-	Serial.print(LT, 1);
+	// Sends a string formatted as <lt>, <ht>, <t>, <heater_status>, <fan_status>CRLF over the serial port
+	Serial.print("/*"); // needed as start of frame by Serial Studio
+	Serial.print(lt, 1);
 	Serial.print(", ");
-	Serial.print(HT, 1);
+	Serial.print(ht, 1);
 	Serial.print(", ");
 	Serial.print(t, 1);
 	Serial.print(", ");
-	Serial.print(digitalRead(HEATER_OUTPUT) ? "H_OFF":"H_ON ");
+	Serial.print(digitalRead(HEATER_OUTPUT) ? "0":"1");
 	Serial.print(", ");
-	Serial.println(digitalRead(FAN_OUTPUT) ? "F_OFF" : "F_ON ");
+	Serial.print(digitalRead(FAN_OUTPUT) ? "0":"1");
+	Serial.println("*/"); // needed as end of frame by Serial Studio
+
+	delay(100);
 }

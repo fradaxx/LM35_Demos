@@ -3,9 +3,9 @@ Name:			LM35_basic.ino
 Function:		Simple LM35-based thermometer
 
 Created:		2018-06-12 11:46:32
-Last Modified:	2020-11-03
+Last Modified:	2022-12-05
 
-Copyright(c) 2018, Francesco Adamo - Polytechnic University of Bari - Italy
+Copyright(c) 2018-2022, Francesco Adamo - Polytechnic University of Bari - Italy
 e-mail: francesco.adamo@poliba.it
 
 Permission is hereby granted, free of charge, to any person
@@ -31,8 +31,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-#define ADC_FSR		(double) 1.1	// Voltage reference for analog input
-#define K_LM35		(double) (ADC_FSR/1024)/0.01 // transducer constant [°C/LSB]
+#define ADC_FSR		1.1	// Voltage reference for analog input; set to 1.1 V (INTERNAL) to improve the thermometer resolution
+#define Q			(ADC_FSR/1024.0)	// ADC resolution [V/LSB]
+#define K_LM35		Q/0.01	// transducer constant [°C/LSB]
+
 #define	LM35_AIN	A0	// Analog input pin
 
 
@@ -43,12 +45,12 @@ void setup()
 	Serial.print("LM35 Thermometer resolution: ");
 	Serial.print(K_LM35);
 	Serial.println(" degC/LSB");
+	Serial.println("temperature");
 }
 
 void loop()
 {
-	Serial.print("t = ");
-	Serial.print((float) K_LM35*analogRead(LM35_AIN));
-	Serial.println(" degC");
+	float temperature = K_LM35 * analogRead(LM35_AIN);
+	Serial.println(temperature);
 	delay(100);
 }

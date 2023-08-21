@@ -6,20 +6,23 @@
 			All non-arduino files created by visual micro and all visual studio project or solution files can be freely deleted and are not required to compile a sketch (do not delete your own code!).
 			Note: debugger breakpoints are stored in '.sln' or '.asln' files, knowledge of last uploaded breakpoints is stored in the upload.vmps.xml file. Both files are required to continue a previous debug session without needing to compile and upload again
 	
-	Hardware: Arduino/Genuino Uno, Platform=avr, Package=arduino
+	Hardware: Arduino Nano Every(nona4809), Platform=megaavr, Package=arduino
 */
 
 #if defined(_VMICRO_INTELLISENSE)
 
 #ifndef _VSARDUINO_H_
 #define _VSARDUINO_H_
-#define __AVR_atmega328p__
-#define __AVR_ATmega328P__
-#define __AVR_ATmega328p__
+#define __AVR_atmega4809__ 1
+#define __MEGAAVR_ATmega4809__ 1
+#define __AVR_ATmega4809__ 1
 #define F_CPU 16000000L
-#define ARDUINO 108013
-#define ARDUINO_AVR_UNO
-#define ARDUINO_ARCH_AVR
+#define ARDUINO 108010
+#define ARDUINO_AVR_NANO_EVERY 1
+#define ARDUINO_ARCH_MEGAAVR 1
+#define AVR_NANO_4809_328MODE 1
+#define MILLIS_USE_TIMERB3 1
+#define NO_EXTERNAL_I2C_PULLUP 1
 #define __cplusplus 201103L
 #define _Pragma(x)
 #define __AVR__
@@ -71,8 +74,9 @@ typedef void *__builtin_va_list;
 
 
 
-#include "arduino.h"
+#include <arduino.h>
 #include <pins_arduino.h> 
+#include <timers.h> 
 //#undef F
 //#define F(string_literal) ((const PROGMEM char *)(string_literal))
 #undef PSTR
@@ -88,6 +92,84 @@ typedef void *__builtin_va_list;
 #define pgm_read_float(address_short) float()
 #define pgm_read_ptr(address_short)   short()
 
-#include "LM35_Thermostat_with_Hysteresis.ino"
+// Additions from toolchain\avr\include\string.h
+extern int ffs(int __val) __ATTR_CONST__;
+extern int ffs(int __val) __ATTR_CONST__ { }
+extern int ffsl(long __val) __ATTR_CONST__;
+extern int ffsl(long __val) __ATTR_CONST__ { }
+__extension__ extern int ffsll(long long __val) __ATTR_CONST__;
+__extension__ extern int ffsll(long long __val) __ATTR_CONST__ { }
+extern void* memccpy(void*, const void*, int, size_t);
+extern void* memccpy(void*, const void*, int, size_t) { }
+extern void* memchr(const void*, int, size_t) __ATTR_PURE__;
+extern void* memchr(const void*, int, size_t) __ATTR_PURE__ { }
+extern int memcmp(const void*, const void*, size_t) __ATTR_PURE__;
+extern int memcmp(const void*, const void*, size_t) __ATTR_PURE__ { }
+extern void* memcpy(void*, const void*, size_t);
+extern void* memcpy(void*, const void*, size_t) { }
+extern void* memmem(const void*, size_t, const void*, size_t) __ATTR_PURE__;
+extern void* memmem(const void*, size_t, const void*, size_t) __ATTR_PURE__ { }
+extern void* memmove(void*, const void*, size_t);
+extern void* memmove(void*, const void*, size_t) { }
+extern void* memrchr(const void*, int, size_t) __ATTR_PURE__;
+extern void* memrchr(const void*, int, size_t) __ATTR_PURE__ { }
+extern void* memset(void*, int, size_t);
+extern void* memset(void*, int, size_t) { }
+extern char* strcat(char*, const char*);
+extern char* strcat(char*, const char*) { }
+extern char* strchr(const char*, int) __ATTR_PURE__;
+extern char* strchr(const char*, int) __ATTR_PURE__ { }
+extern char* strchrnul(const char*, int) __ATTR_PURE__;
+extern char* strchrnul(const char*, int) __ATTR_PURE__ { }
+extern int strcmp(const char*, const char*) __ATTR_PURE__;
+extern int strcmp(const char*, const char*) __ATTR_PURE__ { }
+extern char* strcpy(char*, const char*);
+extern char* strcpy(char*, const char*) { }
+extern int strcasecmp(const char*, const char*) __ATTR_PURE__;
+extern int strcasecmp(const char*, const char*) __ATTR_PURE__ { }
+extern char* strcasestr(const char*, const char*) __ATTR_PURE__;
+extern char* strcasestr(const char*, const char*) __ATTR_PURE__ { }
+extern size_t strcspn(const char* __s, const char* __reject) __ATTR_PURE__;
+extern size_t strcspn(const char* __s, const char* __reject) __ATTR_PURE__ { }
+extern char* strdup(const char* s1);
+extern char* strdup(const char* s1) { }
+extern size_t strlcat(char*, const char*, size_t);
+extern size_t strlcat(char*, const char*, size_t) { }
+extern size_t strlcpy(char*, const char*, size_t);
+extern size_t strlcpy(char*, const char*, size_t) { }
+extern size_t strlen(const char*) __ATTR_PURE__;
+extern size_t strlen(const char*) __ATTR_PURE__ { }
+extern char* strlwr(char*);
+extern char* strlwr(char*) { }
+extern char* strncat(char*, const char*, size_t);
+extern char* strncat(char*, const char*, size_t) { }
+extern int strncmp(const char*, const char*, size_t) __ATTR_PURE__;
+extern int strncmp(const char*, const char*, size_t) __ATTR_PURE__ { }
+extern char* strncpy(char*, const char*, size_t);
+extern char* strncpy(char*, const char*, size_t) { }
+extern int strncasecmp(const char*, const char*, size_t) __ATTR_PURE__;
+extern int strncasecmp(const char*, const char*, size_t) __ATTR_PURE__ { }
+extern size_t strnlen(const char*, size_t) __ATTR_PURE__;
+extern size_t strnlen(const char*, size_t) __ATTR_PURE__ { }
+extern char* strpbrk(const char* __s, const char* __accept) __ATTR_PURE__;
+extern char* strpbrk(const char* __s, const char* __accept) __ATTR_PURE__ { }
+extern char* strrchr(const char*, int) __ATTR_PURE__;
+extern char* strrchr(const char*, int) __ATTR_PURE__ { }
+extern char* strrev(char*);
+extern char* strrev(char*) { }
+extern char* strsep(char**, const char*);
+extern char* strsep(char**, const char*) { }
+extern size_t strspn(const char* __s, const char* __accept) __ATTR_PURE__;
+extern size_t strspn(const char* __s, const char* __accept) __ATTR_PURE__ { }
+extern char* strstr(const char*, const char*) __ATTR_PURE__;
+extern char* strstr(const char*, const char*) __ATTR_PURE__ { }
+extern char* strtok(char*, const char*);
+extern char* strtok(char*, const char*) { }
+extern char* strtok_r(char*, const char*, char**);
+extern char* strtok_r(char*, const char*, char**) { }
+extern char* strupr(char*);
+extern char* strupr(char*) { }
+
+#include "..\LM35_Thermostat_with_Hysteresis.ino"
 #endif
 #endif
